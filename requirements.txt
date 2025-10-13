@@ -16,3 +16,4 @@ PyYAML==6.0.2
 plotly
 streamlit
 pytest
+sympy

@@ -1,120 +1,204 @@
 import streamlit as st
+import plotly.graph_objects as go
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
-# st.set_page_config() debe ser el primer comando de Streamlit en tu script.
+# --- Importaciones de tu Librería APICompass ---
+# Asegúrate de que tu librería está instalada en modo editable (pip install -e .)
+# para que estos imports funcionen.
+from APICompass.ancillary.time_unit import TimeUnit
+from APICompass.basic.bounded_rate import Rate, Quota, BoundedRate
+from APICompass.basic.plan_and_demand import Plan
+# Asumimos que has creado estos módulos como discutimos
+from APICompass.curves.charge import run_plan_analysis
+from APICompass.curves.plotter import plot_consumption_analysis
+
+
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="API Compass",
-    page_icon="⚡",
+    page_icon="🧭",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- MODELO DE DATOS Y LÓGICA (Aquí irían los imports de tus módulos) ---
-# from plan import Plan
-# from charge_model import generate_charge_curves
-# Por ahora, usamos funciones placeholder.
 
 # --- FUNCIONES PARA CADA PÁGINA/SECCIÓN ---
-# Encapsular el contenido de cada sección en una función hace el código más limpio.
-
-def show_home_page():
-    """Muestra la página de bienvenida e introducción."""
-    st.title("🏡 Bienvenida al Modelador de Consumo de APIs")
-    st.markdown("""
-    Esta herramienta te ayuda a visualizar y entender los límites de consumo de una API
-    utilizando una analogía de **carga y descarga**, similar a una batería.
-    
-    **Navega por las diferentes secciones usando el menú de la izquierda.**
-    
-    ### ¿Qué puedes hacer aquí?
-    - **Simulador Interactivo:** Introduce los límites de una API y tu tasa de consumo para generar un `Quota Burn-down Chart` y analizar su sostenibilidad.
-    - **Casos de Estudio:** Explora ejemplos pre-configurados que ilustran escenarios comunes (consumo ideal, 'bursts' insostenibles, etc.).
-    - **Sobre el Modelo:** Aprende más sobre la teoría detrás de este análisis.
-    """)
 
 def show_interactive_simulator():
     """Muestra el simulador donde el usuario introduce los datos."""
     st.title("🛠️ Simulador Interactivo")
-    st.markdown("Introduce los parámetros de la API y tu tasa de consumo esperada para generar el análisis.")
-    
-    # --- Columna de Entradas (Inputs) ---
+    st.markdown("Define los límites de un plan de API para generar su 'Quota Burn-down Chart' y analizar su sostenibilidad.")
+
     with st.container(border=True):
-        st.subheader("Parámetros de la API")
-        col1, col2, col3 = st.columns(3)
+        st.subheader("Parámetros del Plan")
+        col1, col2, col3, col4 = st.columns(4)
+        
         with col1:
-            quota = st.number_input("Cuota Total (requests)", min_value=1, value=5000)
+            rate_val = st.number_input("Rate (requests)", min_value=1, value=100)
+            rate_unit_str = st.selectbox("Unidad de Rate", ["1s", "1min", "1h"], index=1)
+        
         with col2:
-            window = st.number_input("Ventana de Tiempo (minutos)", min_value=1, value=60)
+            quota_val = st.number_input("Quota (requests)", min_value=1, value=5000)
+            quota_unit_str = st.selectbox("Unidad de Quota", ["1min", "1h", "1day", "1month"], index=1)
+        
         with col3:
-            rate = st.number_input("Tasa de Consumo (requests/minuto)", min_value=1, value=100)
-    
-    # --- Columna de Salidas (Outputs) ---
-    if st.button("Generar Análisis", type="primary"):
-        st.subheader("Resultados del Análisis")
-        st.info("Aquí es donde llamarías a tu lógica de `charge_model.py` y mostrarías el gráfico de Plotly.")
+            st.markdown("<br/>", unsafe_allow_html=True) # Spacer for alignment
+            generate_btn = st.button("Generar Análisis", type="primary")
         
-        # Placeholder para la gráfica
-        st.markdown("> *Gráfica de `Quota Burn-down` aparecerá aquí...*")
-        
-        # Placeholder para el diagnóstico
-        st.success("Diagnóstico: **Consumo Sostenible**. Tienes suficiente margen (`headroom`).")
+        with col4:
+            st.markdown("<br/>", unsafe_allow_html=True) # Spacer for alignment
+            normalized_view = st.toggle("Vista Normalizada", value=True)
+
+
+    if generate_btn:
+        try:
+            # 1. Crear el objeto Plan a partir de las entradas del usuario
+            rate = Rate(rate_val, rate_unit_str)
+            quota = Quota(quota_val, quota_unit_str)
+            bounded_rate = BoundedRate(rate=rate, quota=[quota])
+            simulated_plan = Plan(
+                name="Plan Simulado",
+                bounded_rate=bounded_rate,
+                cost=0, overage_cost=0, max_number_of_subscriptions=1, billing_period="1month"
+            )
+            
+            # 2. Ejecutar el análisis
+            analysis_result = run_plan_analysis(simulated_plan)
+
+            # 3. Generar la figura de Plotly
+            target_unit_map = {"1min": TimeUnit.MIN, "1h": TimeUnit.HOUR, "1day": TimeUnit.DAY}
+            target_unit = target_unit_map.get(quota_unit_str)
+
+            fig = plot_consumption_analysis(analysis_result, normalized=normalized_view, target_unit=target_unit)
+
+            # 4. Mostrar la figura
+            st.plotly_chart(fig, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"Ha ocurrido un error al generar el análisis: {e}")
+            st.exception(e)
+
 
 def show_case_studies():
     """Muestra los ejemplos y casos de estudio guiados."""
     st.title("📚 Casos de Estudio")
-    st.markdown("Aquí analizarás y explicarás diferentes escenarios con configuraciones fijas.")
+    st.markdown("Análisis de diferentes planes de API del mundo real.")
 
-    with st.expander("Caso A: Consumo Ideal y Sostenible", expanded=True):
-        st.markdown("""
-        **Escenario:** Una API con una cuota generosa y un cliente que consume a una tasa constante y moderada.
-        
-        **Análisis:** El punto de equilibrio (`equilibrium point`) se encuentra muy por encima del umbral de seguridad, indicando un uso saludable y con margen para picos de demanda.
-        
-        *Aquí iría la gráfica de Plotly para este caso.*
-        """)
+    # --- Caso Zenhub ---
+    with st.expander("Caso 1: Zenhub Enterprise", expanded=True):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("""
+            **Análisis del Plan:**
+            - **Rate:** 100 requests / 1 minuto
+            - **Quota:** 5000 requests / 1 hora
+            
+            **Observaciones:**
+            *(Aquí puedes escribir tu análisis. Por ejemplo: Este plan muestra un equilibrio interesante...)*
+            """)
+        with col2:
+            # Lógica para generar la gráfica
+            plan_zenhub = Plan("Zenhub Enterprise", BoundedRate(rate=Rate(100, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
+            result_zenhub = run_plan_analysis(plan_zenhub)
+            fig_zenhub = plot_consumption_analysis(result_zenhub, normalized=True)
+            st.plotly_chart(fig_zenhub, use_container_width=True)
 
-    with st.expander("Caso B: Consumo Insostenible por Ráfagas ('Bursts')"):
-        st.markdown("""
-        **Escenario:** Un script que, al iniciarse, intenta sincronizar muchos datos, consumiendo la cuota de forma muy agresiva al principio.
-        
-        **Análisis:** El `headroom` se agota rápidamente. Este patrón de consumo llevará inevitablemente a errores `429 Too Many Requests` si no se implementa una estrategia de `backoff`.
-        
-        *Aquí iría la gráfica de Plotly para este caso.*
-        """)
-
-def show_about_page():
-    """Muestra la explicación teórica del modelo."""
-    st.title("📖 Sobre el Modelo")
-    st.markdown("""
-    ### El Concepto de Carga y Descarga
-    El modelo se basa en una analogía simple:
+    # --- Caso Github ---
+    with st.expander("Caso 2: Github (GET Operations)"):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("""
+            **Análisis del Plan:**
+            - **Rate:** 900 requests / 1 minuto
+            - **Quota:** 5000 requests / 1 hora
+            
+            **Observaciones:**
+            *(Placeholder para tu análisis...)*
+            """)
+        with col2:
+            plan_github = Plan("Github GET", BoundedRate(rate=Rate(900, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
+            result_github = run_plan_analysis(plan_github)
+            fig_github = plot_consumption_analysis(result_github, normalized=True)
+            st.plotly_chart(fig_github, use_container_width=True)
     
-    - La **Cuota Total** de la API es la **capacidad máxima de una batería**.
-    - La **Curva de Carga (Azul)** representa la **energía consumida** a lo largo del tiempo.
-    - La **Curva de Descarga (Roja)** representa la **energía restante** o capacidad residual (`headroom`).
+    # --- Caso Google Cloud ---
+    with st.expander("Caso 3: Google Cloud Natural Language API"):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("""
+            **Análisis del Plan:**
+            - **Rate:** 600 requests / 1 minuto
+            - **Quota:** 800,000 requests / 1 día
+            
+            **Observaciones:**
+            *(Placeholder para tu análisis...)*
+            """)
+        with col2:
+            plan_gcp = Plan("Google Cloud NL", BoundedRate(rate=Rate(600, "1min"), quota=[Quota(800000, "1day")]), 0, 0, 1, "1month")
+            result_gcp = run_plan_analysis(plan_gcp)
+            fig_gcp = plot_consumption_analysis(result_gcp, normalized=True)
+            st.plotly_chart(fig_gcp, use_container_width=True)
+            
+    # --- Caso Azure AI ---
+    with st.expander("Caso 4: Azure AI Language (Standard)"):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("""
+            **Análisis del Plan:**
+            - **Rate:** 1000 requests / 1 minuto
+            - **Quota:** 2,000,000 requests / 1 hora
+            
+            **Observaciones:**
+            *(Este es un caso interesante donde la tasa de consumo permitida es tan alta que agota la cuota horaria en solo 2000 minutos (más de una hora), lo que significa que el agotamiento ocurre teóricamente en el segundo 0. El modelo lo interpreta como una meseta total.)*
+            """)
+        with col2:
+            plan_azure = Plan("Azure AI", BoundedRate(rate=Rate(1000, "1min"), quota=[Quota(2000000, "1h")]), 0, 0, 1, "1month")
+            result_azure = run_plan_analysis(plan_azure)
+            fig_azure = plot_consumption_analysis(result_azure, normalized=True)
+            st.plotly_chart(fig_azure, use_container_width=True)
+
+    # --- Caso Hardcodeado ---
+    with st.expander("Caso 5: Mock API Inalcanzable"):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("""
+            **Análisis del Plan:**
+            - **Quota Teórica:** 500,000 req/mes
+            - **Capacidad Real (por rate limit):** 432,010 req/mes
+            
+            **Observaciones:**
+            *(Este es un ejemplo de una API cuya cuota mensual es teóricamente inalcanzable debido a un rate limit más restrictivo. La curva de carga real (azul) nunca puede llegar al límite teórico (verde), demostrando una discrepancia entre el plan comercial y la limitación técnica.)*
+            """)
+        with col2:
+            T = 720
+            rate_value = 10
+            quota_month = 500000
+            capacity_month = 432010
+
+            fig_mock = go.Figure()
+            fig_mock.add_trace(go.Scatter(x=[0, T], y=[rate_value, capacity_month], mode="lines", line=dict(color="royalblue", width=2), name="Carga Real"))
+            fig_mock.add_trace(go.Scatter(x=[0, T], y=[capacity_month, 0], mode="lines", line=dict(color="red", width=2, dash="dot"), name="Descarga (Real)"))
+            fig_mock.add_trace(go.Scatter(x=[0, T], y=[quota_month, quota_month], mode="lines", line=dict(color="green", dash="dash"), name="Capacidad Teórica"))
+            fig_mock.update_layout(title="API con Cuota Inalcanzable", xaxis_title="Tiempo (horas)", yaxis_title="Requests", template="plotly_white", showlegend=True)
+            st.plotly_chart(fig_mock, use_container_width=True)
+
+
+# --- NAVEGACIÓN PRINCIPAL ---
+def main():
+    """Función principal que renderiza la navegación y la página seleccionada."""
+    st.sidebar.title("API Compass 🧭")
     
-    ### Sostenibilidad
-    Un patrón de consumo se considera **sostenible** si la capacidad residual no se agota antes de que la ventana de tiempo se reinicie. El punto donde ambas curvas se cruzan nos da una indicación clave de la "salud" de nuestra estrategia de consumo.
-    """)
-    st.image("https://i.imgur.com/8StBwTj.png", caption="Analogía visual del modelo de consumo.")
+    page_options = {
+        "Simulador Interactivo": show_interactive_simulator,
+        "Casos de Estudio": show_case_studies,
+    }
 
+    selected_page = st.sidebar.radio("Elige una sección:", list(page_options.keys()))
+    
+    st.sidebar.markdown("---")
+    st.sidebar.info("Esta aplicación utiliza el modelo de Carga/Descarga para analizar la sostenibilidad del consumo de APIs.")
 
-# --- NAVEGACIÓN PRINCIPAL EN LA BARRA LATERAL ---
-# Usamos un st.radio para crear el menú de navegación.
-st.sidebar.title("Navegación")
-page_options = {
-    "Bienvenida": show_home_page,
-    "Simulador Interactivo": show_interactive_simulator,
-    "Casos de Estudio": show_case_studies,
-    "Sobre el Modelo": show_about_page
-}
+    page_options[selected_page]()
 
-selected_page = st.sidebar.radio("Elige una sección:", list(page_options.keys()))
+if __name__ == "__main__":
+    main()
 
-# --- RENDERIZADO DE LA PÁGINA SELECCIONADA ---
-# Llama a la función correspondiente a la opción elegida en el menú.
-page_options[selected_page]()
-
-# Añade un pie de página a la barra lateral
-st.sidebar.markdown("---")
-st.sidebar.info("Desarrollado por [Tu Nombre].")
