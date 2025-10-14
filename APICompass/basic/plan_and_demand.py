@@ -516,24 +516,10 @@ class Demand():
 # Example usage
 if __name__ == "__main__":
 
-    # Create a BoundedRate instance for testing
-    plan_limits = BoundedRate(Rate(1, "2s"), Quota(1500, "1h"))
-    demand = Demand(1, "3s", "5min")
-    demand2 = Demand(10, "1min", "100min")
-    demand3 = Demand(100, "1min", "10min")
-    demand4 = Demand(1, "2s", "1h")
+    plan_azure = Plan("Azure AI", BoundedRate(rate=Rate(1000, "1min"), quota=[Quota(2000000, "1h")]), 0, 0, 1, "1month")
 
-    # Create a Plan instance
-    plan = Plan("Test Plan", plan_limits, cost=100, overage_cost=10, max_number_of_subscriptions=1, billing_period="1 month")
-
- 
-    fig = plan.compare_demands([demand, demand2, demand3, demand4], return_fig=True)
-    
-    update_title(fig, "Plan vs Demands")
-    update_yaxis(fig, "Requests")
-    #update_legend_names(fig, ["Demand 3", "Plan", "Demand 4", "Demand 1", "Demand 2"])
-    update_legend(fig, "Bounded Rates")
-    fig.show()
+    print(plan_azure.quota_exhaustion_thresholds())
+    print(plan_azure.bounded_rate.quota)
 
     
     

@@ -34,11 +34,11 @@ def show_interactive_simulator():
         
         with col1:
             rate_val = st.number_input("Rate (requests)", min_value=1, value=100)
-            rate_unit_str = st.selectbox("Unidad de Rate", ["1s", "1min", "1h"], index=1)
+            rate_unit_str = st.text_input("Unidad de Rate", value="1min")
         
         with col2:
             quota_val = st.number_input("Quota (requests)", min_value=1, value=5000)
-            quota_unit_str = st.selectbox("Unidad de Quota", ["1min", "1h", "1day", "1month"], index=1)
+            quota_unit_str = st.text_input("Unidad de Quota", value="1min")
         
         with col3:
             st.markdown("<br/>", unsafe_allow_html=True) # Spacer for alignment
@@ -65,7 +65,7 @@ def show_interactive_simulator():
             analysis_result = run_plan_analysis(simulated_plan)
 
             # 3. Generar la figura de Plotly
-            target_unit_map = {"1min": TimeUnit.MIN, "1h": TimeUnit.HOUR, "1day": TimeUnit.DAY}
+            target_unit_map = {"1min": TimeUnit.MINUTE, "1h": TimeUnit.HOUR, "1day": TimeUnit.DAY}
             target_unit = target_unit_map.get(quota_unit_str)
 
             fig = plot_consumption_analysis(analysis_result, normalized=normalized_view, target_unit=target_unit)
@@ -201,4 +201,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

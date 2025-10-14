@@ -531,11 +531,17 @@ class BoundedRate:
             for q in quotas:
                 # Validación rápida: que sea mayor que la rate y no supere el máximo posible
                 if q.consumption_unit <= rate.consumption_unit:
+                    # AÑADIDO EL 14/10 PARA UNA PRUEBA, LAS CUOTAS INALCANZABLES.
+                    valid_quotas.append(q)
+                    self.limits.append(q)
                     continue
                 rate_capacity = rate.consumption_unit * (
                     q.consumption_period.to_milliseconds() / rate.consumption_period.to_milliseconds()
                 )
                 if q.consumption_unit > rate_capacity:
+                    # AÑADIDO EL 14/10 PARA UNA PRUEBA, LAS CUOTAS INALCANZABLES.
+                    valid_quotas.append(q)
+                    self.limits.append(q)
                     continue
 
                 # Simular capacidad hasta el momento de esa cuota
@@ -551,6 +557,9 @@ class BoundedRate:
                     self.limits.append(q)
                 else:
                     print(f"[WARNING] Quota omitted as unreachable: {q}")
+
+                
+
 
             self.quota = valid_quotas
         self.max_active_time = max_active_time
@@ -1137,12 +1146,7 @@ class BoundedRate:
  
         return exhaustion_thresholds[0] if len(exhaustion_thresholds) == 1 else exhaustion_thresholds
     
-if __name__ == "__main__":
-    rate_1 = Rate(1, "2s")
-    rate_2 = Rate(10, "1s")
-    #rate_2.show_capacity("10min")
 
-    print(rate_2.min_time)
     
 
 
