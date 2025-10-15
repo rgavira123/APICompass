@@ -18,12 +18,13 @@ def _add_intersection_markers(fig, result, normalized=True, target_unit=None):
     """Helper function to add intersection or plateau markers to a figure."""
     if result.normalized_plateau_interval and normalized:
         (x_start, y_start), (x_end, y_end) = result.normalized_plateau_interval
-        fig.add_shape(
-            type="rect", xref="x", yref="y",
-            x0=x_start, y0=0, x1=x_end, y1=y_start,
-            fillcolor="LightGreen", opacity=0.3, layer="below", line_width=0,
-        )
-        fig.add_annotation(x=(x_start+x_end)/2, y=y_start-0.1, text="Meseta de Sostenibilidad", showarrow=False)
+        # Se ha eliminado el área verde que representaba la meseta para simplificar el gráfico.
+        # fig.add_shape(
+        #     type="rect", xref="x", yref="y",
+        #     x0=x_start, y0=0, x1=x_end, y1=y_start,
+        #     fillcolor="LightGreen", opacity=0.3, layer="below", line_width=0,
+        # )
+        # fig.add_annotation(x=(x_start+x_end)/2, y=y_start-0.1, text="Meseta de Sostenibilidad", showarrow=False)
     
     elif result.raw_plateau_interval and not normalized:
         target_unit = target_unit or result.quota_period.unit
@@ -31,11 +32,12 @@ def _add_intersection_markers(fig, result, normalized=True, target_unit=None):
         x_start = p_start[0].unit.to(target_unit, p_start[0].value)
         x_end = p_end[0].unit.to(target_unit, p_end[0].value)
         y_val = p_start[1]
-        fig.add_shape(
-            type="rect", xref="x", yref="y",
-            x0=x_start, y0=0, x1=x_end, y1=y_val,
-            fillcolor="LightGreen", opacity=0.3, layer="below", line_width=0,
-        )
+        # Se ha eliminado el área verde que representaba la meseta para simplificar el gráfico.
+        # fig.add_shape(
+        #     type="rect", xref="x", yref="y",
+        #     x0=x_start, y0=0, x1=x_end, y1=y_val,
+        #     fillcolor="LightGreen", opacity=0.3, layer="below", line_width=0,
+        # )
 
     elif result.normalized_intersection_point and normalized:
         fig.add_trace(go.Scatter(
@@ -179,4 +181,3 @@ if __name__ == '__main__':
     print("Mostrando gráfica de una sola curva (Carga)...")
     fig3 = plot_single_curve(mock_result_corte, curve_type='load', normalized=False, target_unit=TimeUnit.MINUTE)
     fig3.show()
-
