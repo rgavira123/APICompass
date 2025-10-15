@@ -26,7 +26,7 @@ st.set_page_config(
 def show_interactive_simulator():
     """Muestra el simulador donde el usuario introduce los datos."""
     st.title("🛠️ Simulador Interactivo")
-    st.markdown("Define los límites de un plan de API para generar su 'Quota Burn-down Chart' y analizar su sostenibilidad.")
+    st.markdown("Define los límites de un plan de API para generar sus curvas asociadas.")
 
     with st.container(border=True):
         st.subheader("Parámetros del Plan")
@@ -65,7 +65,7 @@ def show_interactive_simulator():
             analysis_result = run_plan_analysis(simulated_plan)
 
             # 3. Generar la figura de Plotly
-            target_unit_map = {"1min": TimeUnit.MIN, "1h": TimeUnit.HOUR, "1day": TimeUnit.DAY}
+            target_unit_map = {"1min": TimeUnit.MINUTE, "1h": TimeUnit.HOUR, "1day": TimeUnit.DAY}
             target_unit = target_unit_map.get(quota_unit_str)
 
             fig = plot_consumption_analysis(analysis_result, normalized=normalized_view, target_unit=target_unit)
@@ -85,101 +85,86 @@ def show_case_studies():
 
     # --- Caso Zenhub ---
     with st.expander("Caso 1: Zenhub Enterprise", expanded=True):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("""
-            **Análisis del Plan:**
-            - **Rate:** 100 requests / 1 minuto
-            - **Quota:** 5000 requests / 1 hora
-            
-            **Observaciones:**
-            *(Aquí puedes escribir tu análisis. Por ejemplo: Este plan muestra un equilibrio interesante...)*
-            """)
-        with col2:
-            # Lógica para generar la gráfica
-            plan_zenhub = Plan("Zenhub Enterprise", BoundedRate(rate=Rate(100, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
-            result_zenhub = run_plan_analysis(plan_zenhub)
-            fig_zenhub = plot_consumption_analysis(result_zenhub, normalized=True)
-            st.plotly_chart(fig_zenhub, use_container_width=True)
+        st.markdown("""
+        **Análisis del Plan:**
+        - **Rate:** 100 requests / 1 minuto
+        - **Quota:** 5000 requests / 1 hora
+        
+        **Observaciones:**
+        *placeholder*
+        """)
+        # Lógica para generar la gráfica
+        plan_zenhub = Plan("Zenhub Enterprise", BoundedRate(rate=Rate(100, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
+        result_zenhub = run_plan_analysis(plan_zenhub)
+        fig_zenhub = plot_consumption_analysis(result_zenhub, normalized=True)
+        st.plotly_chart(fig_zenhub, use_container_width=True)
 
     # --- Caso Github ---
     with st.expander("Caso 2: Github (GET Operations)"):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("""
-            **Análisis del Plan:**
-            - **Rate:** 900 requests / 1 minuto
-            - **Quota:** 5000 requests / 1 hora
-            
-            **Observaciones:**
-            *(Placeholder para tu análisis...)*
-            """)
-        with col2:
-            plan_github = Plan("Github GET", BoundedRate(rate=Rate(900, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
-            result_github = run_plan_analysis(plan_github)
-            fig_github = plot_consumption_analysis(result_github, normalized=True)
-            st.plotly_chart(fig_github, use_container_width=True)
+        st.markdown("""
+        **Análisis del Plan:**
+        - **Rate:** 900 requests / 1 minuto
+        - **Quota:** 5000 requests / 1 hora
+        
+        **Observaciones:**
+        *(Placeholder para tu análisis...)*
+        """)
+        plan_github = Plan("Github GET", BoundedRate(rate=Rate(900, "1min"), quota=[Quota(5000, "1h")]), 0, 0, 1, "1month")
+        result_github = run_plan_analysis(plan_github)
+        fig_github = plot_consumption_analysis(result_github, normalized=True)
+        st.plotly_chart(fig_github, use_container_width=True)
     
     # --- Caso Google Cloud ---
     with st.expander("Caso 3: Google Cloud Natural Language API"):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("""
-            **Análisis del Plan:**
-            - **Rate:** 600 requests / 1 minuto
-            - **Quota:** 800,000 requests / 1 día
-            
-            **Observaciones:**
-            *(Placeholder para tu análisis...)*
-            """)
-        with col2:
-            plan_gcp = Plan("Google Cloud NL", BoundedRate(rate=Rate(600, "1min"), quota=[Quota(800000, "1day")]), 0, 0, 1, "1month")
-            result_gcp = run_plan_analysis(plan_gcp)
-            fig_gcp = plot_consumption_analysis(result_gcp, normalized=True)
-            st.plotly_chart(fig_gcp, use_container_width=True)
+        st.markdown("""
+        **Análisis del Plan:**
+        - **Rate:** 600 requests / 1 minuto
+        - **Quota:** 800,000 requests / 1 día
+        
+        **Observaciones:**
+        *(Placeholder para tu análisis...)*
+        """)
+        plan_gcp = Plan("Google Cloud NL", BoundedRate(rate=Rate(600, "1min"), quota=[Quota(800000, "1day")]), 0, 0, 1, "1month")
+        result_gcp = run_plan_analysis(plan_gcp)
+        fig_gcp = plot_consumption_analysis(result_gcp, normalized=True)
+        st.plotly_chart(fig_gcp, use_container_width=True)
             
     # --- Caso Azure AI ---
     with st.expander("Caso 4: Azure AI Language (Standard)"):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("""
-            **Análisis del Plan:**
-            - **Rate:** 1000 requests / 1 minuto
-            - **Quota:** 2,000,000 requests / 1 hora
-            
-            **Observaciones:**
-            *(Este es un caso interesante donde la tasa de consumo permitida es tan alta que agota la cuota horaria en solo 2000 minutos (más de una hora), lo que significa que el agotamiento ocurre teóricamente en el segundo 0. El modelo lo interpreta como una meseta total.)*
-            """)
-        with col2:
-            plan_azure = Plan("Azure AI", BoundedRate(rate=Rate(1000, "1min"), quota=[Quota(2000000, "1h")]), 0, 0, 1, "1month")
-            result_azure = run_plan_analysis(plan_azure)
-            fig_azure = plot_consumption_analysis(result_azure, normalized=True)
-            st.plotly_chart(fig_azure, use_container_width=True)
+        st.markdown("""
+        **Análisis del Plan:**
+        - **Rate:** 1000 requests / 1 minuto
+        - **Quota:** 2,000,000 requests / 1 hora
+        
+        **Observaciones:**
+        *Hay que revisar los casos de distribución uniforme*
+        """)
+        plan_azure = Plan("Azure AI", BoundedRate(rate=Rate(33334, "1min"), quota=[Quota(2000000, "1h")]), 0, 0, 1, "1month")
+        result_azure = run_plan_analysis(plan_azure)
+        fig_azure = plot_consumption_analysis(result_azure, normalized=True)
+        st.plotly_chart(fig_azure, use_container_width=True)
 
     # --- Caso Hardcodeado ---
     with st.expander("Caso 5: Mock API Inalcanzable"):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("""
-            **Análisis del Plan:**
-            - **Quota Teórica:** 500,000 req/mes
-            - **Capacidad Real (por rate limit):** 432,010 req/mes
-            
-            **Observaciones:**
-            *(Este es un ejemplo de una API cuya cuota mensual es teóricamente inalcanzable debido a un rate limit más restrictivo. La curva de carga real (azul) nunca puede llegar al límite teórico (verde), demostrando una discrepancia entre el plan comercial y la limitación técnica.)*
-            """)
-        with col2:
-            T = 720
-            rate_value = 10
-            quota_month = 500000
-            capacity_month = 432010
+        st.markdown("""
+        **Análisis del Plan:**
+        - **Quota Teórica:** 500,000 req/mes
+        - **Capacidad Real (por rate limit):** 432,010 req/mes
+        
+        **Observaciones:**
+        *revisar para incluir la casuistica*
+        """)
+        T = 720
+        rate_value = 10
+        quota_month = 500000
+        capacity_month = 432010
 
-            fig_mock = go.Figure()
-            fig_mock.add_trace(go.Scatter(x=[0, T], y=[rate_value, capacity_month], mode="lines", line=dict(color="royalblue", width=2), name="Carga Real"))
-            fig_mock.add_trace(go.Scatter(x=[0, T], y=[capacity_month, 0], mode="lines", line=dict(color="red", width=2, dash="dot"), name="Descarga (Real)"))
-            fig_mock.add_trace(go.Scatter(x=[0, T], y=[quota_month, quota_month], mode="lines", line=dict(color="green", dash="dash"), name="Capacidad Teórica"))
-            fig_mock.update_layout(title="API con Cuota Inalcanzable", xaxis_title="Tiempo (horas)", yaxis_title="Requests", template="plotly_white", showlegend=True)
-            st.plotly_chart(fig_mock, use_container_width=True)
+        fig_mock = go.Figure()
+        fig_mock.add_trace(go.Scatter(x=[0, T], y=[rate_value, capacity_month], mode="lines", line=dict(color="royalblue", width=2), name="Carga Real"))
+        fig_mock.add_trace(go.Scatter(x=[0, T], y=[capacity_month, 0], mode="lines", line=dict(color="red", width=2, dash="dot"), name="Descarga (Real)"))
+        fig_mock.add_trace(go.Scatter(x=[0, T], y=[quota_month, quota_month], mode="lines", line=dict(color="green", dash="dash"), name="Capacidad Teórica"))
+        fig_mock.update_layout(title="API con Cuota Inalcanzable", xaxis_title="Tiempo (horas)", yaxis_title="Requests", template="plotly_white", showlegend=True)
+        st.plotly_chart(fig_mock, use_container_width=True)
 
 
 # --- NAVEGACIÓN PRINCIPAL ---
@@ -201,4 +186,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
